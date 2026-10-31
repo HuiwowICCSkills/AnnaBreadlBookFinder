@@ -1,0 +1,4 @@
+interface:
+  display_name: "Anna’s Archive → Breadl 图书查找"
+  short_description: "纯无头提取 Anna Request Code，经 Breadl 返回下载候选"
+  default_prompt: "使用 $anna-breadl-book-finder 纯无头查询指定图书：先在 Anna’s Archive 定位书籍和 Request Code，再交给 Breadl 获取下载候选；只有我明确要求时才下载。"

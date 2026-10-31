@@ -1,0 +1,5 @@
+output/
+*.local.json
+books/
+*.part
+.anna-breadl-cache/
