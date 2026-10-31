@@ -154,6 +154,17 @@ export function chooseCandidate(candidates, selector = "Mirror 1") {
   );
 }
 
+export function availablePath(target) {
+  if (!fs.existsSync(target)) return target;
+  const extension = path.extname(target);
+  const stem = extension ? target.slice(0, -extension.length) : target;
+  for (let index = 2; index < 10000; index += 1) {
+    const candidate = `${stem} (${index})${extension}`;
+    if (!fs.existsSync(candidate)) return candidate;
+  }
+  throw new Error("could not find an available output filename");
+}
+
 async function fetchJson(url) {
   const response = await fetch(url);
   if (!response.ok) throw new Error(`HTTP ${response.status} for ${url}`);
@@ -455,6 +466,11 @@ async function searchCommand(options) {
   try {
     await browser.start();
     const nav = await browser.navigate(url, options);
+    await browser.waitUntil(
+      `Boolean(document.querySelector(".searchResultBox, .bookRow")) ||
+       /On your request nothing has been found/i.test(document.body?.innerText || "")`,
+      options.timeoutMs || 45000,
+    );
     const data = await browser.evaluate(EXTRACT_BOOK_ROWS);
     const rows = data.rows.slice(0, limit);
     let status = "ok";
@@ -518,6 +534,11 @@ const EXTRACT_BOOK_DETAIL = `(() => {
 async function resolveTarget(browser, target, options) {
   const url = normalizeBookTarget(target);
   const nav = await browser.navigate(url, options);
+  await browser.waitUntil(
+    `Boolean(document.querySelector('h1[itemprop="name"], #reqcode')) ||
+     /not found|access denied|forbidden|challenge/i.test(document.body?.innerText || "")`,
+    options.timeoutMs || 45000,
+  );
   const data = await browser.evaluate(EXTRACT_BOOK_DETAIL);
   const book = data.book;
   let status = "ok";
@@ -619,7 +640,7 @@ async function submitBreadl(browser, requestCode, options) {
   await sleep(500);
   await browser.waitUntil(
     `location.pathname.startsWith("/d/") ||
-     /not found|invalid|error|request code/i.test(document.body?.innerText || "")`,
+     /not found|invalid|error|book not available/i.test(document.body?.innerText || "")`,
     options.timeoutMs || 45000,
   );
   if (options.waitMs > 0) await sleep(options.waitMs);
@@ -695,6 +716,7 @@ async function fileSha256(filePath) {
 async function downloadCandidate(candidate, options, title) {
   const response = await fetch(candidate.url, {
     redirect: "follow",
+    signal: AbortSignal.timeout(30 * 60 * 1000),
     headers: {
       "user-agent": DEFAULT_UA,
       accept: "*/*",
@@ -727,13 +749,24 @@ async function downloadCandidate(candidate, options, title) {
 
   const outputDir = path.resolve(options.outDir || "books");
   await fsp.mkdir(outputDir, { recursive: true });
-  const finalPath = options.outFile
+  const requestedPath = options.outFile
     ? path.resolve(options.outFile)
     : path.join(outputDir, filename);
+  if (options.outFile && fs.existsSync(requestedPath)) {
+    throw new Error(`output file already exists: ${requestedPath}`);
+  }
+  const finalPath = availablePath(requestedPath);
   await fsp.mkdir(path.dirname(finalPath), { recursive: true });
-  const partPath = `${finalPath}.part`;
-  await pipeline(Readable.fromWeb(response.body), fs.createWriteStream(partPath));
-  await fsp.rename(partPath, finalPath);
+  const partPath = `${finalPath}.part-${process.pid}`;
+  try {
+    await pipeline(Readable.fromWeb(response.body), fs.createWriteStream(partPath, {
+      flags: "wx",
+    }));
+    await fsp.rename(partPath, finalPath);
+  } catch (error) {
+    await fsp.rm(partPath, { force: true }).catch(() => {});
+    throw error;
+  }
   const stat = await fsp.stat(finalPath);
   return {
     path: finalPath,

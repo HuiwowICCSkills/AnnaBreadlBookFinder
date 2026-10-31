@@ -1,8 +1,12 @@
 import assert from "node:assert/strict";
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
 import test from "node:test";
 
 import {
   annaSearchUrl,
+  availablePath,
   chooseCandidate,
   contentDispositionFilename,
   decodeOnclickUrl,
@@ -70,6 +74,17 @@ test("filename helpers strip traversal and decode content disposition", () => {
     ),
     "Applied Hydrology.pdf",
   );
+});
+
+test("download paths do not overwrite an existing file", () => {
+  const folder = fs.mkdtempSync(path.join(os.tmpdir(), "anna-breadl-test-"));
+  const first = path.join(folder, "book.pdf");
+  fs.writeFileSync(first, "first");
+  assert.equal(availablePath(first), path.join(folder, "book (2).pdf"));
+  const second = path.join(folder, "book (2).pdf");
+  fs.writeFileSync(second, "second");
+  assert.equal(availablePath(first), path.join(folder, "book (3).pdf"));
+  fs.rmSync(folder, { recursive: true, force: true });
 });
 
 test("CLI parsing supports documented options", () => {
