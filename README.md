@@ -74,3 +74,23 @@ git clone https://github.com/HuiwowICCSkills/AnnaBreadlBookFinder.git "$env:USER
 ## 合规
 
 只使用用户有权访问或法律允许使用的资料。不绕过验证码、登录、付费墙或站点访问限制；遇到这类障碍时保留页面状态并停止该条路径。
+
+## 实测效果（2026-11-09）
+
+以下命令与结果来自本机 `~/.codex/skills/anna-breadl-book-finder` 的实网运行；检索日期 2026-11-09（Asia/Shanghai），输出为该次运行实际返回的 JSON 报告。
+
+```powershell
+& .\run.ps1 search 'international criminal law' --limit 5
+```
+
+- 状态：`ok`；`result_count = 4`；本次按 `--limit 5` 请求，页面实际给出 4 行。全程未登录、未下载任何文件，4 本书的 `request_code` 均为空。
+- 代表性结果：
+
+| 题名 | 作者；年份；格式 | 链接 |
+| --- | --- | --- |
+| International Criminal Law | Roger O'Keefe；2015；EPUB | https://annas-archive.cc/book/13524864 |
+| International Criminal Law | Douglas Guilfoyle；2016；PDF | https://annas-archive.cc/book/13543512 |
+| International Criminal Law 2 e | Ilias Bantekas；2003；PDF | https://annas-archive.cc/book/15512489 |
+| International Criminal Law and Philosophy (ASIL Studies in International Legal Theory) | Larry May；2009；PDF | https://annas-archive.cc/book/15597231 |
+
+> 说明：`evidence` 记录本次访问的起始与最终 URL 同为 `https://annas-archive.cc/s/international%20criminal%20law?`，页面标题为 “International Criminal Law Search On Anna’s Archive”。上表只是**书目元数据**（书名、作者、年份、格式、出版者），不是书籍正文；`request_code` 为空说明本次没有取得可提交给 Breadl 的取书码，也没有发生 `resolve` / `request` / `download`。与 2026-10-31 那次实测（无登录会话下搜索页对任何词都只返回登录提示、被报为 `auth-required`）相比，本次公开检索返回了真实结果；但登录墙和站点改版仍可能随时让 `search` 回到 `auth-required` 或 `unexpected-content`。
