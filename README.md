@@ -2,7 +2,7 @@
 
 独立的 Anna’s Archive → Breadl 图书查找 skill。它只使用无头 Chrome，不启动有头浏览器，不保存账号密码。
 
-仓库：<https://github.com/GDUFSICCSkills/AnnaBreadlBookFinder>
+仓库：<https://github.com/HuiwowICCSkills/AnnaBreadlBookFinder>
 
 ## 运行环境
 
@@ -27,7 +27,7 @@
 ## 安装
 
 ```powershell
-git clone https://github.com/GDUFSICCSkills/AnnaBreadlBookFinder.git "$env:USERPROFILE\.codex\skills\anna-breadl-book-finder"
+git clone https://github.com/HuiwowICCSkills/AnnaBreadlBookFinder.git "$env:USERPROFILE\.codex\skills\anna-breadl-book-finder"
 ```
 
 如果 skill 目录另有统一命名规则，以本机实际安装路径为准。
